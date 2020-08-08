@@ -1,1 +1,23 @@
+@import "./node_modules/bulma/sass/utilities/initial-variables.sass";
+
+//navigation
+$navbar-background-color: $black;
+.navbar-brand .navbar-item {
+  padding: 0rem !important;
+}
+.navbar-item img {
+  max-height: 3rem !important;
+}
+
+//footer
+$footer-padding: 0.5rem;
+
+//custom classes
+.card-content.is-vcentered {
+  display: flex;
+  justify-content: center;
+  align-content: center; /* used this for multiple child */
+  align-items: center; /* if an only child */
+}
+
 @import "./node_modules/bulma/bulma.sass";
