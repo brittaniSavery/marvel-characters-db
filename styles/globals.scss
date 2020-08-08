@@ -16,8 +16,12 @@ $footer-padding: 0.5rem;
 .card-content.is-vcentered {
   display: flex;
   justify-content: center;
-  align-content: center; /* used this for multiple child */
-  align-items: center; /* if an only child */
+  align-content: center; //used this for multiple child
+  align-items: center; // if an only child
 }
 
 @import "./node_modules/bulma/bulma.sass";
+
+.loader {
+  @include loader;
+}
