@@ -2,7 +2,7 @@ import React from "react";
 import CharacterCard from "../components/CharacterCard";
 import useSWR from "swr";
 import { MARVEL_API } from "../lib/constants";
-import Loader from "../components/Loader";
+import PageLoader from "../components/PageLoader";
 
 export default function Index() {
   const [pageIndex, setPageIndex] = React.useState(0);
@@ -14,7 +14,7 @@ export default function Index() {
     }&limit=${limit}&apikey=${process.env.NEXT_PUBLIC_API_KEY}`
   );
 
-  if (!data) return <Loader />;
+  if (!data) return <PageLoader />;
 
   const total = data.data.total;
   const characters = data.data.results;

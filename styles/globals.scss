@@ -1,5 +1,6 @@
 @import "./node_modules/bulma/sass/utilities/initial-variables.sass";
 
+/** Overriding Bulma Defaults **/
 //navigation
 $navbar-background-color: $black;
 .navbar-brand .navbar-item {
@@ -10,18 +11,31 @@ $navbar-background-color: $black;
 }
 
 //footer
-$footer-padding: 0.5rem;
+$footer-padding: 1rem;
 
-//custom classes
-.card-content.is-vcentered {
+@import "./node_modules/bulma/bulma.sass";
+
+/** Custom Utils **/
+//mixins
+@mixin vertical-centered {
   display: flex;
   justify-content: center;
   align-content: center; //used this for multiple child
   align-items: center; // if an only child
 }
 
-@import "./node_modules/bulma/bulma.sass";
+//custom classes
+.card-content.is-vcentered {
+  @include vertical-centered();
+}
 
-.loader {
-  @include loader;
+.page-loader {
+  @include vertical-centered();
+  padding: $size-5;
+
+  .loader-body {
+    @include loader();
+    height: 120px;
+    width: 120px;
+  }
 }
