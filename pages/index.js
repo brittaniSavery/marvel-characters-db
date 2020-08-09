@@ -1,17 +1,20 @@
 import React from "react";
 import CharacterCard from "../components/CharacterCard";
 import useSWR from "swr";
-import { MARVEL_API } from "../lib/constants";
+import { MARVEL_API, DAY_IN_SECONDS } from "../lib/constants";
 import PageLoader from "../components/PageLoader";
+import { getQueryParamStarter } from "../lib/helpers";
 
-export default function Index() {
+const limit = 20;
+
+export default function Index({ firstPage }) {
   const [pageIndex, setPageIndex] = React.useState(0);
-  const limit = 20;
 
   const { data, error } = useSWR(
     `${MARVEL_API}/characters?offset=${
       pageIndex * limit
-    }&limit=${limit}&apikey=${process.env.NEXT_PUBLIC_API_KEY}`
+    }&limit=${limit}&apikey=${process.env.NEXT_PUBLIC_API_KEY}`,
+    { initialData: firstPage }
   );
 
   if (!data) return <PageLoader />;
@@ -115,4 +118,26 @@ export default function Index() {
       </nav>
     </section>
   );
+}
+
+/**
+ * Pre-renders the first page of characters
+ */
+export async function getStaticProps() {
+  const params = getQueryParamStarter();
+  params.set("limit", limit);
+
+  const response = await fetch(`${MARVEL_API}/characters?${params.toString()}`);
+
+  //checking the call was successful, and if not, sending a null prop for the page to call the API on load
+  let result;
+  if (response.ok) {
+    result = await response.json();
+  } else {
+    console.log(response.status);
+    console.log(response.statusText);
+    result = null;
+  }
+
+  return { props: { firstPage: result }, revalidate: DAY_IN_SECONDS };
 }

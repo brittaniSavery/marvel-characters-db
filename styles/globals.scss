@@ -29,6 +29,10 @@ $footer-padding: 1rem;
   @include vertical-centered();
 }
 
+.is-short {
+  height: 500px;
+}
+
 .page-loader {
   @include vertical-centered();
   padding: $size-5;

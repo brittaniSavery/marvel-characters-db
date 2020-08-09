@@ -16,7 +16,7 @@ export default function CharacterCard({ character }) {
         className="card-content has-background-link has-text-centered py-1 px-1 is-vcentered"
         style={{ height: "2.8em", lineHeight: 1.1 }}
       >
-        <Link href={`/${character.id}`}>
+        <Link href={`/character/${character.id}`}>
           <a className="has-text-light">{character.name}</a>
         </Link>
       </div>
