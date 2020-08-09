@@ -14,7 +14,7 @@ export default function Index({ firstPage }) {
     `${MARVEL_API}/characters?offset=${
       pageIndex * limit
     }&limit=${limit}&apikey=${process.env.NEXT_PUBLIC_API_KEY}`,
-    { initialData: firstPage }
+    { initialData: pageIndex === 0 ? firstPage : null }
   );
 
   if (!data) return <PageLoader />;
@@ -32,90 +32,109 @@ export default function Index({ firstPage }) {
   if (pageIndex < lastIndex) paginationList.push(pageIndex + 1);
   if (pageIndex < lastIndex - 1) paginationList.push(pageIndex + 2);
 
+  /**
+   * Handles the page change on the character grid and jumps to the top of page
+   * @param {number} index - new page index
+   */
+  const handlePageChange = (index) => {
+    setPageIndex(index);
+    window.scrollTo(0, 0);
+  };
+
+  const isHiddenMobile = (page, index) => {
+    if (page === pageIndex) return false; //always show the active page
+    if (page < 1 || page >= lastIndex - 1) return false; //show if close enough to beginning/end of pages
+    return page !== pageIndex - 1 && page !== pageIndex + 1; //otherwise, only show previous and next pages
+  };
+
   return (
     <section className="section">
-      <h1 className="is-size-1-desktop is-size-3-mobile has-text-centered">
-        All Characters
-      </h1>
-      <div className="columns is-multiline is-mobile">
-        {characters.map((character) => (
-          <div
-            key={`Character-${character.id}`}
-            className="column is-one-fifth-desktop is-one-third-tablet is-half-mobile"
-          >
-            <CharacterCard character={character} />
-          </div>
-        ))}
-      </div>
-      <nav
-        className="pagination is-centered"
-        role="navigation"
-        aria-label="character pagination"
-      >
-        <button
-          className={`pagination-previous ${pageIndex === 0 && "is-hidden"}`}
-          onClick={() => setPageIndex(pageIndex - 1)}
-        >
-          Previous
-        </button>
-        <button
-          className={`pagination-next ${
-            pageIndex === lastIndex && "is-hidden"
-          }`}
-          onClick={() => setPageIndex(pageIndex + 1)}
-        >
-          Next
-        </button>
-        <ul className="pagination-list">
-          {pageIndex > 2 && (
-            <>
-              <li>
-                <button
-                  className="pagination-link"
-                  aria-label="Goto page 1"
-                  onClick={() => setPageIndex(0)}
-                >
-                  1
-                </button>
-              </li>
-              <li>
-                <span className="pagination-ellipsis">&hellip;</span>
-              </li>
-            </>
-          )}
-          {paginationList.map((index) => (
-            <li key={`pagination-${index}`}>
-              <button
-                className={`pagination-link ${
-                  index === pageIndex && "is-current"
-                }`}
-                aria-label={`${index !== pageIndex && "Goto"} page ${
-                  index + 1
-                }`}
-                onClick={() => setPageIndex(index)}
-              >
-                {index + 1}
-              </button>
-            </li>
+      <div className="container">
+        <h1 className="is-size-1-desktop is-size-3-mobile has-text-centered">
+          All Characters
+        </h1>
+        <div className="columns is-multiline is-mobile">
+          {characters.map((character) => (
+            <div
+              key={`Character-${character.id}`}
+              className="column is-one-fifth-desktop is-one-third-tablet is-half-mobile"
+            >
+              <CharacterCard character={character} />
+            </div>
           ))}
-          {pageIndex < lastIndex - 2 && (
-            <>
-              <li>
-                <span className="pagination-ellipsis">&hellip;</span>
-              </li>
-              <li>
+        </div>
+        <nav
+          className="pagination is-centered"
+          role="navigation"
+          aria-label="character pagination"
+        >
+          <button
+            className={`pagination-previous ${pageIndex === 0 && "is-hidden"}`}
+            onClick={() => handlePageChange(pageIndex - 1)}
+          >
+            Previous
+          </button>
+          <button
+            className={`pagination-next ${
+              pageIndex === lastIndex && "is-hidden"
+            }`}
+            onClick={() => handlePageChange(pageIndex + 1)}
+          >
+            Next
+          </button>
+          <ul className="pagination-list">
+            {/* Adds link to first page */}
+            {pageIndex > 2 && (
+              <>
+                <li>
+                  <button
+                    className="pagination-link"
+                    aria-label="Goto page 1"
+                    onClick={() => handlePageChange(0)}
+                  >
+                    1
+                  </button>
+                </li>
+                <li>
+                  <span className="pagination-ellipsis">&hellip;</span>
+                </li>
+              </>
+            )}
+            {paginationList.map((pagination, index) => (
+              <li key={`pagination-${pagination}`}>
                 <button
-                  className="pagination-link"
-                  aria-label={`Goto page ${lastIndex + 1}`}
-                  onClick={() => setPageIndex(lastIndex)}
+                  className={`pagination-link ${
+                    pagination === pageIndex && "is-current"
+                  } ${isHiddenMobile(pagination, index) && "is-hidden-mobile"}`}
+                  aria-label={`${pagination !== pageIndex && "Goto"} page ${
+                    pagination + 1
+                  }`}
+                  onClick={() => handlePageChange(pagination)}
                 >
-                  {lastIndex + 1}
+                  {pagination + 1}
                 </button>
               </li>
-            </>
-          )}
-        </ul>
-      </nav>
+            ))}
+            {/* Adds link to last page */}
+            {pageIndex < lastIndex - 2 && (
+              <>
+                <li>
+                  <span className="pagination-ellipsis">&hellip;</span>
+                </li>
+                <li>
+                  <button
+                    className="pagination-link"
+                    aria-label={`Goto page ${lastIndex + 1}`}
+                    onClick={() => handlePageChange(lastIndex)}
+                  >
+                    {lastIndex + 1}
+                  </button>
+                </li>
+              </>
+            )}
+          </ul>
+        </nav>
+      </div>
     </section>
   );
 }
