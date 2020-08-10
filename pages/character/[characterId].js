@@ -4,6 +4,7 @@ import PageLoader from "../../components/PageLoader";
 import { getQueryParamStarter } from "../../lib/helpers";
 import { DAY_IN_SECONDS, MARVEL_API } from "../../lib/constants";
 import Message from "../../components/Message";
+import CharacterCard from "../../components/CharacterCard";
 
 export default function Character({ character, error }) {
   const router = useRouter();
@@ -24,35 +25,70 @@ export default function Character({ character, error }) {
         </div>
       </div>
       <div className="container">
-        <div className="columns is-multiline is-gapless">
+        <div className="columns is-multiline">
           <div className="column">
             <h2 className="subtitle is-3 mb-0 mt-3">Description</h2>
             <p>{character.description || "Currently unavailable"}</p>
 
             <h2 className="subtitle is-3 mb-0 mt-3">Stories</h2>
+            {character.stories.length > 0 ? (
+              character.stories.map((story) => (
+                <>
+                  <h3 className="pt-2 is-uppercase has-text-weight-medium">
+                    {story.title}
+                  </h3>
+                  <p>{story.description}</p>
+                  <p className="pb-2 is-italic">—{story.originalIssue}</p>
+                </>
+              ))
+            ) : (
+              <p>Currently unavailable</p>
+            )}
           </div>
           <div className="column">
             <h2 className="subtitle is-3 mb-0 mt-3">Related Characters</h2>
-            <p>{character.description || "Currently unavailable"}</p>
+            <div className="columns is-multiline">
+              {character.related.length > 0 ? (
+                character.related.map((character) => (
+                  <div
+                    key={character.name}
+                    className="column is-one-quarter-desktop is-half-tablet"
+                  >
+                    <CharacterCard character={character} mini />
+                  </div>
+                ))
+              ) : (
+                <div className="column is-full">
+                  <p>Currently unavailable</p>
+                </div>
+              )}
+            </div>
 
             <h2 className="subtitle is-3 mb-0 mt-3">Series</h2>
             <div className="columns is-multiline">
-              {character.series.map((series) => (
-                <div className="column is-one-quarter-desktop is-half-tablet">
-                  <div className="card">
-                    <div className="card-image">
-                      <figure className="image is-1by1">
-                        <img
-                          src={`${series.thumbnail.path}/standard_fantastic.${series.thumbnail.extension}`}
-                        />
-                      </figure>
-                    </div>
-                    <div className="card-content has-background-black has-text-white">
-                      <p>{series.title}</p>
+              {character.series.length > 0 ? (
+                character.series.map((series) => (
+                  <div
+                    key={series.title}
+                    className="column is-one-quarter-desktop is-half-tablet"
+                  >
+                    <div className="card">
+                      <div className="card-image">
+                        <figure className="image is-1by1">
+                          <img
+                            src={`${series.thumbnail.path}/standard_fantastic.${series.thumbnail.extension}`}
+                          />
+                        </figure>
+                      </div>
+                      <div className="card-content has-background-black has-text-white">
+                        <p>{series.title}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p>Currently unavailable</p>
+              )}
             </div>
           </div>
           <div className="column is-full">
@@ -141,12 +177,64 @@ export async function getStaticProps({ params }) {
     if (seriesResponse.ok) {
       character.series = (await seriesResponse.json()).data.results.map(
         (series) => ({
+          id: series.id,
           title: series.title,
           thumbnail: series.thumbnail,
         })
       );
     } else {
       character.series = [];
+    }
+  }
+
+  //adding most recent stories
+  if (allCharacterData.stories.available > 0) {
+    queryParams.set("orderBy", "-modified");
+    queryParams.set("limit", 5);
+
+    const storiesResponse = await fetch(
+      `${allCharacterData.stories.collectionURI}?${queryParams.toString()}`
+    );
+
+    if (storiesResponse.ok) {
+      //only returning stories that have descriptions
+      character.stories = (await storiesResponse.json()).data.results
+        .filter((story) => story.description !== "")
+        .map((story) => ({
+          id: story.id,
+          title: story.title,
+          description: story.description,
+          originalIssue: story.originalIssue.name,
+        }));
+    } else {
+      character.stories = [];
+    }
+  }
+
+  //adding related characters based on most recent series and stories
+  if (character.series.length > 0 || character.stories.length > 0) {
+    queryParams.set("limit", 9);
+    queryParams.set("orderBy", "name");
+
+    queryParams.set(
+      "series",
+      character.series.map((series) => series.id)
+    );
+    queryParams.set(
+      "stories",
+      character.stories.map((story) => story.id)
+    );
+
+    const charactersResponse = await fetch(
+      `${MARVEL_API}/characters?${queryParams.toString()}`
+    );
+
+    if (charactersResponse.ok) {
+      character.related = (await charactersResponse.json()).data.results.filter(
+        (character) => `${character.id}` !== params.characterId
+      );
+    } else {
+      character.related = [];
     }
   }
 
