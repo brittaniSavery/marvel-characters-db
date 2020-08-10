@@ -50,9 +50,7 @@ export default function Index({ firstPage }) {
   return (
     <section className="section">
       <div className="container">
-        <h1 className="is-size-1-desktop is-size-3-mobile has-text-centered">
-          All Characters
-        </h1>
+        <h1 className="title is-1 has-text-centered">All Characters</h1>
         <div className="columns is-multiline is-mobile">
           {characters.map((character) => (
             <div

@@ -9,7 +9,7 @@ export default function Layout({ children }) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <NavBar />
-      <main className="container">{children}</main>
+      <main>{children}</main>
       <footer className="footer">
         <a href="https://marvel.com/" target="_blank" rel="noopener noreferrer">
           <p className="has-text-centered">

@@ -29,8 +29,8 @@ $footer-padding: 1rem;
   @include vertical-centered();
 }
 
-.is-short {
-  height: 500px;
+.detail-image {
+  border: 5px solid $link;
 }
 
 .page-loader {
