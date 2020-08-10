@@ -83,7 +83,10 @@ function CommentsBody({ comments }) {
       timeStyle: "medium",
     });
     return (
-      <div className="media">
+      <div
+        key={`comment-${comment.name}-${date.toISOString()}`}
+        className="media"
+      >
         <div className="media-content">
           <div className="content">
             <p>

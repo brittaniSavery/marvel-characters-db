@@ -156,30 +156,33 @@ export async function getStaticProps({ params }) {
     };
   }
 
+  const allCharacterData = (await response.json()).data.results[0];
+  let seriesIds = [];
+
   let character = {};
-  let allCharacterData = (await response.json()).data.results[0];
   character.id = allCharacterData.id;
   character.description = allCharacterData.description;
   character.name = allCharacterData.name;
   character.thumbnail = allCharacterData.thumbnail;
+  character.related = [];
 
   //adding most recent series for character
   if (allCharacterData.series.available > 0) {
     queryParams.set("orderBy", "-modified,-startYear");
-    queryParams.set("limit", 4);
+    queryParams.set("limit", 20);
 
     const seriesResponse = await fetch(
       `${allCharacterData.series.collectionURI}?${queryParams.toString()}`
     );
 
     if (seriesResponse.ok) {
-      character.series = (await seriesResponse.json()).data.results.map(
-        (series) => ({
-          id: series.id,
-          title: series.title,
-          thumbnail: series.thumbnail,
-        })
-      );
+      const results = (await seriesResponse.json()).data.results;
+      character.series = results.slice(0, 4).map((series) => ({
+        id: series.id,
+        title: series.title,
+        thumbnail: series.thumbnail,
+      }));
+      seriesIds = results.slice(0, 10).map((series) => series.id);
     } else {
       character.series = [];
     }
@@ -188,61 +191,49 @@ export async function getStaticProps({ params }) {
   //adding most recent stories
   if (allCharacterData.stories.available > 0) {
     queryParams.set("orderBy", "-modified");
-    queryParams.set("limit", 5);
-    console.log(allCharacterData.stories.collectionURI);
+    queryParams.set("limit", 20);
 
     const storiesResponse = await fetch(
       `${allCharacterData.stories.collectionURI}?${queryParams.toString()}`
     );
 
     if (storiesResponse.ok) {
-      //only returning stories that have descriptions
-      const json = await storiesResponse.json();
-      console.log("Stories Orig", json.data.results);
-      console.log(
-        "Stories Filtered",
-        json.data.results.filter((story) => story.description !== "")
+      //only returning stories with descriptions (if possible)
+      const results = (await storiesResponse.json()).data.results;
+      const describedStories = results.filter(
+        (story) => story.description !== ""
       );
-      character.stories = json.data.results
-        .filter((story) => story.description !== "")
-        .map((story) => ({
-          id: story.id,
-          title: story.title,
-          description: story.description,
-          originalIssue: story.originalIssue.name,
-        }));
+
+      const finalSelection = describedStories.length
+        ? describedStories
+        : results;
+
+      character.stories = finalSelection.slice(0, 5).map((story) => ({
+        id: story.id,
+        title: story.title,
+        description: story.description,
+        originalIssue: story.originalIssue && story.originalIssue.name,
+      }));
     } else {
       character.stories = [];
     }
   }
 
-  console.log(character.stories);
-  console.log(character.series);
-
-  //adding related characters based on most recent series and stories
-  if (character.series.length > 0 || character.stories.length > 0) {
+  //adding related characters based on most recent series
+  if (seriesIds.length > 0 || storyIds.length > 0) {
     queryParams.set("limit", 9);
-    queryParams.set("orderBy", "-modified");
-    queryParams.set(
-      "series",
-      character.series.length
-        ? character.series.map((series) => series.id)
-        : null
-    );
-    queryParams.set(
-      "stories",
-      character.stories.length
-        ? character.stories.map((story) => story.id)
-        : null
-    );
-    console.log(queryParams.toString());
+    queryParams.set("orderBy", "-modified,name");
+    queryParams.set("series", seriesIds);
+
     const charactersResponse = await fetch(
       `${MARVEL_API}/characters?${queryParams.toString()}`
     );
 
     if (charactersResponse.ok) {
-      character.related = (await charactersResponse.json()).data.results
+      const json = await charactersResponse.json();
+      character.related = json.data.results
         .filter((character) => `${character.id}` !== params.characterId)
+        .slice(0, 8)
         .sort((c1, c2) => {
           const compare1 = c1.name.toUpperCase();
           const compare2 = c2.name.toUpperCase();
@@ -251,7 +242,8 @@ export async function getStaticProps({ params }) {
           return 0;
         });
     } else {
-      character.related = [];
+      console.log(charactersResponse.status);
+      console.log(charactersResponse.statusText);
     }
   }
 
