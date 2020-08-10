@@ -97,10 +97,10 @@ export default function Character({ character, error }) {
   );
 }
 
-/** Finding and Pre-rendering the characters that the user most likely will look up first: the first 100 on the grid, the last 100 on the grid, and the most recently modified (big release or new character, etc.) */
+/** Finding and Pre-rendering the most recently modified (big release or new character, etc.) */
 export async function getStaticPaths() {
   const params = getQueryParamStarter();
-  params.set("limit", 100);
+  params.set("limit", 40);
 
   let characterIds = new Set();
   const fetchCharacters = async () => {
@@ -117,14 +117,6 @@ export async function getStaticPaths() {
       console.log(response.statusText);
     }
   };
-
-  //retrieving the first 100 characters
-  params.set("orderBy", "name");
-  await fetchCharacters();
-
-  //retrieving the last 100 characters
-  params.set("orderBy", "-name");
-  await fetchCharacters();
 
   //retrieving the most recently modified characters
   params.set("orderBy", "-modified");
