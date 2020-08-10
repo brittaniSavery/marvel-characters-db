@@ -5,6 +5,8 @@ import { getQueryParamStarter } from "../../lib/helpers";
 import { DAY_IN_SECONDS, MARVEL_API } from "../../lib/constants";
 import Message from "../../components/Message";
 import CharacterCard from "../../components/CharacterCard";
+import SeriesCard from "../../components/SeriesCard";
+import Comments from "../../components/Comments";
 
 export default function Character({ character, error }) {
   const router = useRouter();
@@ -33,13 +35,13 @@ export default function Character({ character, error }) {
             <h2 className="subtitle is-3 mb-0 mt-3">Stories</h2>
             {character.stories.length > 0 ? (
               character.stories.map((story) => (
-                <>
+                <React.Fragment key={`story-${story.title}`}>
                   <h3 className="pt-2 is-uppercase has-text-weight-medium">
                     {story.title}
                   </h3>
                   <p>{story.description}</p>
                   <p className="pb-2 is-italic">—{story.originalIssue}</p>
-                </>
+                </React.Fragment>
               ))
             ) : (
               <p>Currently unavailable</p>
@@ -72,27 +74,22 @@ export default function Character({ character, error }) {
                     key={series.title}
                     className="column is-one-quarter-desktop is-half-tablet"
                   >
-                    <div className="card">
-                      <div className="card-image">
-                        <figure className="image is-1by1">
-                          <img
-                            src={`${series.thumbnail.path}/standard_fantastic.${series.thumbnail.extension}`}
-                          />
-                        </figure>
-                      </div>
-                      <div className="card-content has-background-black has-text-white">
-                        <p>{series.title}</p>
-                      </div>
-                    </div>
+                    <SeriesCard
+                      title={series.title}
+                      thumbnail={series.thumbnail}
+                    />
                   </div>
                 ))
               ) : (
-                <p>Currently unavailable</p>
+                <div className="column is-full">
+                  <p>Currently unavailable</p>
+                </div>
               )}
             </div>
           </div>
           <div className="column is-full">
-            <h2 className="subtitle is-3 mb-0 mt-3">Comments</h2>
+            <h2 className="subtitle is-3 mt-3">Comments</h2>
+            <Comments characterId={character.id} />
           </div>
         </div>
       </div>
@@ -162,6 +159,7 @@ export async function getStaticProps({ params }) {
   let character = {};
   let allCharacterData = (await response.json()).data.results[0];
   character.id = allCharacterData.id;
+  character.description = allCharacterData.description;
   character.name = allCharacterData.name;
   character.thumbnail = allCharacterData.thumbnail;
 
@@ -191,6 +189,7 @@ export async function getStaticProps({ params }) {
   if (allCharacterData.stories.available > 0) {
     queryParams.set("orderBy", "-modified");
     queryParams.set("limit", 5);
+    console.log(allCharacterData.stories.collectionURI);
 
     const storiesResponse = await fetch(
       `${allCharacterData.stories.collectionURI}?${queryParams.toString()}`
@@ -198,7 +197,13 @@ export async function getStaticProps({ params }) {
 
     if (storiesResponse.ok) {
       //only returning stories that have descriptions
-      character.stories = (await storiesResponse.json()).data.results
+      const json = await storiesResponse.json();
+      console.log("Stories Orig", json.data.results);
+      console.log(
+        "Stories Filtered",
+        json.data.results.filter((story) => story.description !== "")
+      );
+      character.stories = json.data.results
         .filter((story) => story.description !== "")
         .map((story) => ({
           id: story.id,
@@ -211,28 +216,40 @@ export async function getStaticProps({ params }) {
     }
   }
 
+  console.log(character.stories);
+  console.log(character.series);
+
   //adding related characters based on most recent series and stories
   if (character.series.length > 0 || character.stories.length > 0) {
     queryParams.set("limit", 9);
-    queryParams.set("orderBy", "name");
-
+    queryParams.set("orderBy", "-modified");
     queryParams.set(
       "series",
-      character.series.map((series) => series.id)
+      character.series.length
+        ? character.series.map((series) => series.id)
+        : null
     );
     queryParams.set(
       "stories",
-      character.stories.map((story) => story.id)
+      character.stories.length
+        ? character.stories.map((story) => story.id)
+        : null
     );
-
+    console.log(queryParams.toString());
     const charactersResponse = await fetch(
       `${MARVEL_API}/characters?${queryParams.toString()}`
     );
 
     if (charactersResponse.ok) {
-      character.related = (await charactersResponse.json()).data.results.filter(
-        (character) => `${character.id}` !== params.characterId
-      );
+      character.related = (await charactersResponse.json()).data.results
+        .filter((character) => `${character.id}` !== params.characterId)
+        .sort((c1, c2) => {
+          const compare1 = c1.name.toUpperCase();
+          const compare2 = c2.name.toUpperCase();
+          if (compare1 < compare2) return -1;
+          if (compare1 > compare2) return 1;
+          return 0;
+        });
     } else {
       character.related = [];
     }
