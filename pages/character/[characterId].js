@@ -220,7 +220,7 @@ export async function getStaticProps({ params }) {
   }
 
   //adding related characters based on most recent series
-  if (seriesIds.length > 0 || storyIds.length > 0) {
+  if (seriesIds.length > 0) {
     queryParams.set("limit", 9);
     queryParams.set("orderBy", "-modified,name");
     queryParams.set("series", seriesIds);
