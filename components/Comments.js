@@ -3,17 +3,20 @@ import useSWR, { mutate } from "swr";
 import PageLoader from "./PageLoader";
 
 export default function Comments({ characterId }) {
-  const [name, setName] = React.useState();
-  const [message, setMessage] = React.useState();
+  const [name, setName] = React.useState("");
+  const [message, setMessage] = React.useState("");
 
   const { data: comments } = useSWR(`/api/comments/${characterId}`);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    debugger;
-    let comment = { characterId: characterId, name: name, message: message };
+
+    //clearing form
+    setName("");
+    setMessage("");
 
     //add comment to local data for immediate response
+    let comment = { characterId: characterId, name: name, message: message };
     mutate(`/api/comments/${characterId}`, [comment, ...comments], false);
 
     await fetch("/api/comments", {
@@ -77,7 +80,7 @@ function CommentsBody({ comments }) {
     );
 
   return comments.map((comment) => {
-    const date = new Date(comment.modifiedDate);
+    const date = new Date(comment.modifiedDate || Date.now());
     const formattedDate = date.toLocaleString("en-US", {
       dateStyle: "medium",
       timeStyle: "medium",

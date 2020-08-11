@@ -10,7 +10,7 @@ const handler = nc().use(database);
 handler.post(async (req, res) => {
   try {
     let comment = req.body;
-    comment.modifiedDate = new Date().toISOString();
+    comment.modifiedDate = new Date();
 
     const dbo = req.db.collection("comments");
     await dbo.insertOne(comment);

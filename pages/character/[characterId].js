@@ -98,9 +98,10 @@ export default function Character({ character, error }) {
 }
 
 /** Finding and Pre-rendering the most recently modified (big release or new character, etc.) */
+/** Finding and Pre-rendering the characters that the user most likely will look up first: the first `limit` on the grid, the last `limit` on the grid, and the most recently modified (big release or new character, etc.) */
 export async function getStaticPaths() {
   const params = getQueryParamStarter();
-  params.set("limit", 40);
+  params.set("limit", 20);
 
   let characterIds = new Set();
   const fetchCharacters = async () => {
@@ -117,6 +118,14 @@ export async function getStaticPaths() {
       console.log(response.statusText);
     }
   };
+
+  //retrieving the first `limit` characters
+  params.set("orderBy", "name");
+  await fetchCharacters();
+
+  //retrieving the last `limit` characters
+  params.set("orderBy", "-name");
+  await fetchCharacters();
 
   //retrieving the most recently modified characters
   params.set("orderBy", "-modified");
@@ -192,15 +201,18 @@ export async function getStaticProps({ params }) {
     if (storiesResponse.ok) {
       //only returning stories with descriptions (if possible)
       const results = (await storiesResponse.json()).data.results;
-      const describedStories = results.filter(
-        (story) => story.description !== ""
-      );
+      let stories = results.filter((story) => story.description !== "");
 
-      const finalSelection = describedStories.length
-        ? describedStories
-        : results;
+      //adding stories with no descriptions
+      if (stories.length < 5) {
+        stories = stories.concat(
+          results
+            .filter((r) => r.description === "")
+            .slice(0, 5 - stories.length)
+        );
+      }
 
-      character.stories = finalSelection.slice(0, 5).map((story) => ({
+      character.stories = stories.map((story) => ({
         id: story.id,
         title: story.title,
         description: story.description,
