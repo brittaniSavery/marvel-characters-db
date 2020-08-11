@@ -165,6 +165,8 @@ export async function getStaticProps({ params }) {
   character.description = allCharacterData.description;
   character.name = allCharacterData.name;
   character.thumbnail = allCharacterData.thumbnail;
+  character.series = [];
+  character.stories = [];
   character.related = [];
 
   //adding most recent series for character
@@ -184,8 +186,6 @@ export async function getStaticProps({ params }) {
         thumbnail: series.thumbnail,
       }));
       seriesIds = results.slice(0, 10).map((series) => series.id);
-    } else {
-      character.series = [];
     }
   }
 
@@ -218,8 +218,6 @@ export async function getStaticProps({ params }) {
         description: story.description,
         originalIssue: story.originalIssue && story.originalIssue.name,
       }));
-    } else {
-      character.stories = [];
     }
   }
 
